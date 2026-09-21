@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcoSort AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f8f5;
+            color: #1f2937;
+        }
+
+        header {
+            background: #166534;
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 32px;
+        }
+
+        header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            background: #16a34a;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #15803d;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .category {
+            font-size: 25px;
+            font-weight: bold;
+            margin: 10px 0 20px;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .section h3 {
+            margin-bottom: 8px;
+        }
+
+        .section p {
+            line-height: 1.6;
+        }
+
+        .verification {
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: 10px;
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+        }
+
+        .tip {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 10px;
+            background: #ecfdf5;
+            border-left: 5px solid #16a34a;
+        }
+
+        .error {
+            color: #b91c1c;
+            margin-top: 15px;
+        }
+
+        .examples {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .input-row {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🌱 EcoSort AI</h1>
+    <p>AI-Powered Waste Segregation & Sustainable Disposal Assistant</p>
+</header>
+
+<div class="container">
+
+    <div class="card">
+
+        <label for="item">
+            What waste item do you want to analyze?
+        </label>
+
+        <div class="input-row">
+
+            <input
+                type="text"
+                id="item"
+                placeholder="Example: old shoe, battery, banana peel..."
+            >
+
+            <button id="analyzeBtn" onclick="analyzeWaste()">
+                Analyze
+            </button>
+
+        </div>
+
+        <div class="examples">
+            Try: old shoe • mobile phone • banana peel • plastic bottle • battery
+        </div>
+
+        <div id="error" class="error"></div>
+
+    </div>
+
+
+    <div id="result" class="card result">
+
+        <h2>🔎 Analysis Result</h2>
+
+        <div id="itemName"></div>
+
+        <div class="category" id="category"></div>
+
+
+        <div class="section">
+            <h3>💡 Why?</h3>
+            <p id="reason"></p>
+        </div>
+
+
+        <div class="section">
+            <h3>🗑️ Recommended Action</h3>
+            <p id="action"></p>
+        </div>
+
+
+        <div class="tip">
+            <h3>🌱 Sustainability Tip</h3>
+            <p id="tip"></p>
+        </div>
+
+
+        <div id="verification" class="verification">
+            ⚠️ Disposal rules can vary by location. Please verify the final
+            disposal method with your local waste-management authority.
+        </div>
+
+    </div>
+
+</div>
+
+
+<footer>
+    EcoSort AI • Supporting SDG 12: Responsible Consumption and Production
+</footer>
+
+
+<script>
+
+async function analyzeWaste() {
+
+    const itemInput = document.getElementById("item");
+    const button = document.getElementById("analyzeBtn");
+    const error = document.getElementById("error");
+    const result = document.getElementById("result");
+
+    const item = itemInput.value.trim();
+
+    error.textContent = "";
+
+    if (!item) {
+        error.textContent = "Please enter a waste item.";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Analyzing...";
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/analyze",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    item: item
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error("Unable to analyze the item.");
+        }
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        document.getElementById("itemName").innerHTML =
+            `<strong>Item:</strong> ${escapeHtml(data.item)}`;
+
+        document.getElementById("category").textContent =
+            data.category;
+
+        document.getElementById("reason").textContent =
+            data.reason;
+
+        document.getElementById("action").textContent =
+            data.recommended_action;
+
+        document.getElementById("tip").textContent =
+            data.sustainability_tip;
+
+        document.getElementById("verification").style.display =
+            data.needs_local_verification ? "block" : "none";
+
+        result.style.display = "block";
+
+    } catch (err) {
+
+        error.textContent =
+            "Unable to analyze the item. Please make sure the AI backend is running.";
+
+        console.error(err);
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Analyze";
+    }
+}
+
+
+function escapeHtml(text) {
+
+    const div = document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+</script>
+
+</body>
+</html>
